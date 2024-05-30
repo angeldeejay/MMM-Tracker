@@ -1,0 +1,12 @@
+.MMM-Tracker td {
+  padding-left: 0.3rem;
+  padding-right: 0.3rem;
+}
+
+.MMM-Tracker td:first-child {
+  padding-left: 0;
+}
+
+.MMM-Tracker td:last-child {
+  padding-right: 0;
+}
