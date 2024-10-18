@@ -155,7 +155,7 @@ module.exports = NodeHelper.create({
         params: { apiKey, uuid }
       })
       .then(({ data }) => {
-        this.debug(JSON.stringify({ _getPasarexDetail: data }));
+        this.info(JSON.stringify({ _getPasarexDetail: data }));
         if (
           !data.shipments ||
           !Array.isArray(data.shipments) ||
@@ -193,7 +193,7 @@ module.exports = NodeHelper.create({
         apiKey
       })
       .then(async ({ data }) => {
-        this.debug(JSON.stringify({ _getPasarex: data }));
+        this.info(JSON.stringify({ _getPasarex: data }));
         if (
           !data.shipments ||
           !Array.isArray(data.shipments) ||
