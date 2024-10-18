@@ -102,12 +102,82 @@ module.exports = NodeHelper.create({
     });
   },
 
+  _parsePasarexShipments(shipments) {
+    const results = [];
+    for (const s of shipments) {
+      if (!s.trackingId || !s.lastState) {
+        results.push({
+          ...s,
+          location: "-",
+          date: moment().format("DD/MM/YYYY hh:mm A"),
+          status: `Error: invalid data received`
+        });
+        continue;
+      }
+
+      const current = requestedShipments.find((o) => s.trackingId == o.code);
+
+      results.push(
+        Object.entries({
+          ...(this.trackingsData[s.trackingId] ?? {}),
+          ...(s.lastState ?? {})
+        }).reduce(
+          (acc, [k, v]) => {
+            switch (k) {
+              case "carrier":
+                return acc;
+              case "date":
+                v = moment(v).format("DD/MM/YYYY hh:mm A");
+                break;
+              default:
+                v = `${v}`
+                  .trim()
+                  .replace(/\([^\)]+\)/i, "")
+                  .replace(/\s+-\s+.*$/i, "");
+                break;
+            }
+            return { ...acc, [k]: v };
+          },
+          { ...current }
+        )
+      );
+    }
+    return results;
+  },
+
   _capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
   },
 
-  // TODO: deprisa and servientrega
-  _getPasarex(apiKey, requestedShipments) {
+  async _getPasarexDetail(apiKey, uuid) {
+    return await axios
+      .get("https://parcelsapp.com/api/v3/shipments/tracking", {
+        params: { apiKey, uuid }
+      })
+      .then(({ data }) => {
+        this.debug(JSON.stringify({ _getPasarexDetail: data }));
+        if (
+          !data.shipments ||
+          !Array.isArray(data.shipments) ||
+          data.shipments.length == 0
+        )
+          return [];
+        return this._parsePasarexShipments(data.shipments);
+      })
+      .catch((error) => {
+        this.error(error);
+        return requestedShipments.map((s) => {
+          return {
+            ...s,
+            location: "Indeterminado",
+            date: moment().format("DD/MM/YYYY hh:mm A"),
+            status: `${error}`
+          };
+        });
+      });
+  },
+
+  async _getPasarex(apiKey, requestedShipments) {
     const payloadShipments = requestedShipments
       .filter((s) => `${s.type}`.trim().toLowerCase() == "pasarex")
       .map((s) => ({
@@ -116,79 +186,35 @@ module.exports = NodeHelper.create({
       }));
     if (requestedShipments.length <= 0) return;
 
-    return new Promise((resolve) => {
-      axios
-        .post("https://parcelsapp.com/api/v3/shipments/tracking", {
-          shipments: payloadShipments,
-          language: this.lang,
-          apiKey
-        })
-        .then(({ data }) => {
-          if (
-            !data.shipments ||
-            !Array.isArray(data.shipments) ||
-            data.shipments.length == 0
-          ) {
-            resolve([]);
-            return;
-          }
-          const results = [];
-          const { shipments } = data;
-          for (const s of shipments) {
-            if (!s.trackingId || !s.lastState) {
-              results.push({
-                ...s,
-                location: "-",
-                date: moment().format("DD/MM/YYYY hh:mm A"),
-                status: `Error: invalid data received`
-              });
-              continue;
-            }
-
-            const current = requestedShipments.find(
-              (o) => s.trackingId == o.code
-            );
-
-            results.push(
-              Object.entries({
-                ...(this.trackingsData[s.trackingId] ?? {}),
-                ...(s.lastState ?? {})
-              }).reduce(
-                (acc, [k, v]) => {
-                  switch (k) {
-                    case "carrier":
-                      return acc;
-                    case "date":
-                      v = moment(v).format("DD/MM/YYYY hh:mm A");
-                      break;
-                    default:
-                      v = `${v}`
-                        .trim()
-                        .replace(/\([^\)]+\)/i, "")
-                        .replace(/\s+-\s+.*$/i, "");
-                      break;
-                  }
-                  return { ...acc, [k]: v };
-                },
-                { ...current }
-              )
-            );
-          }
-          resolve(results);
-        })
-        .catch((error) => {
-          resolve(
-            requestedShipments.map((s) => {
-              return {
-                ...s,
-                location: "Indeterminado",
-                date: moment().format("DD/MM/YYYY hh:mm A"),
-                status: `${error}`
-              };
-            })
-          );
+    return await axios
+      .post("https://parcelsapp.com/api/v3/shipments/tracking", {
+        shipments: payloadShipments,
+        language: this.lang,
+        apiKey
+      })
+      .then(async ({ data }) => {
+        this.debug(JSON.stringify({ _getPasarex: data }));
+        if (
+          !data.shipments ||
+          !Array.isArray(data.shipments) ||
+          data.shipments.length == 0
+        ) {
+          if (!data.uuid) return [];
+          return this._getPasarexDetail(apiKey, data.uuid);
+        }
+        return this._parsePasarexShipments(data.shipments);
+      })
+      .catch((error) => {
+        this.error(error);
+        return requestedShipments.map((s) => {
+          return {
+            ...s,
+            location: "Indeterminado",
+            date: moment().format("DD/MM/YYYY hh:mm A"),
+            status: `${error}`
+          };
         });
-    });
+      });
   },
 
   _sendNotification(notification, payload) {
