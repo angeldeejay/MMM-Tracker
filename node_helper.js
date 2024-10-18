@@ -108,9 +108,9 @@ module.exports = NodeHelper.create({
       if (!s.trackingId || !s.lastState) {
         results.push({
           ...s,
-          location: "-",
+          location: "Indeterminado",
           date: moment().format("DD/MM/YYYY hh:mm A"),
-          status: `Error: invalid data received`
+          status: s.error ?? "indeterminado"
         });
         continue;
       }
@@ -164,13 +164,20 @@ module.exports = NodeHelper.create({
         `https://parcelsapp.com/api/v3/shipments/tracking?uuid=${uuid}&apiKey=${apiKey}`
       )
       .then(async ({ data }) => {
-        this.info(JSON.stringify({ _getPasarexDetail: data }));
+        // this.info(JSON.stringify({ _getPasarexDetail: data }));
         if (
           !data.shipments ||
           !Array.isArray(data.shipments) ||
           data.shipments.length == 0
         )
-          return [];
+          return requestedShipments.map((s) => {
+            return {
+              ...s,
+              location: "Indeterminado",
+              date: moment().format("DD/MM/YYYY hh:mm A"),
+              status: "Indeterminado"
+            };
+          });
         return await this._parsePasarexShipments(
           data.shipments,
           requestedShipments
@@ -205,7 +212,7 @@ module.exports = NodeHelper.create({
         apiKey
       })
       .then(async ({ data }) => {
-        this.info(JSON.stringify({ _getPasarex: data }));
+        // this.info(JSON.stringify({ _getPasarex: data }));
         if (
           !data.shipments ||
           !Array.isArray(data.shipments) ||
