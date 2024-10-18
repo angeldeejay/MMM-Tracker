@@ -118,7 +118,7 @@ module.exports = NodeHelper.create({
       s.lastState = s.lastState ?? {};
 
       if (!s.lastState.location && typeof s.attributes !== "undefined") {
-        for (const attrib of attributes) {
+        for (const attrib of s.attributes) {
           if (attrib.l && attrib.val && `${attrib.l}`.trim() === "from")
             s.lastState.location = `${attrib.val}`.split("/")[0].trim();
         }

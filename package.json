@@ -1,6 +1,6 @@
 {
   "name": "mmm-tracker",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Package tracker",
   "main": "MMM-Tracker.js",
   "scripts": {
