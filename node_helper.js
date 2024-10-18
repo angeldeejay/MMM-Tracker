@@ -202,7 +202,7 @@ module.exports = NodeHelper.create({
           if (!data.uuid) return [];
           return this._getPasarexDetail(apiKey, data.uuid);
         }
-        return this._parsePasarexShipments(data.shipments);
+        return await this._parsePasarexShipments(data.shipments);
       })
       .catch((error) => {
         this.error(error);
