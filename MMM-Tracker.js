@@ -112,7 +112,12 @@ Module.register("MMM-Tracker", {
       return { ...acc, [s.code]: s };
     }, {});
     // Send Socket Notification and start node_helper
-    this._sendNotification("GET_TRACKINGS", this.config);
+    if (Object.keys(this.trackingsData).length <= 0) {
+      this.ready = true;
+      this.updateDom();
+    } else {
+      this._sendNotification("GET_TRACKINGS", this.config);
+    }
     setTimeout(() => this.getTrackings(), this.config.fetchInterval);
   },
 
