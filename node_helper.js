@@ -151,9 +151,9 @@ module.exports = NodeHelper.create({
 
   async _getPasarexDetail(apiKey, uuid) {
     return await axios
-      .get("https://parcelsapp.com/api/v3/shipments/tracking", {
-        params: { apiKey, uuid }
-      })
+      .get(
+        `https://parcelsapp.com/api/v3/shipments/tracking?uuid=${uuid}&apiKey=${apiKey}`
+      )
       .then(({ data }) => {
         this.info(JSON.stringify({ _getPasarexDetail: data }));
         if (
