@@ -115,12 +115,21 @@ module.exports = NodeHelper.create({
         continue;
       }
 
+      s.lastState = s.lastState ?? {};
+
+      if (!s.lastState.location && typeof s.attributes !== "undefined") {
+        for (const attrib of attributes) {
+          if (attrib.l && attrib.val && `${attrib.l}`.trim() === "from")
+            s.lastState.location = `${attrib.val}`.split("/")[0].trim();
+        }
+      }
+
       const current = requestedShipments.find((o) => s.trackingId == o.code);
 
       results.push(
         Object.entries({
           ...(this.trackingsData[s.trackingId] ?? {}),
-          ...(s.lastState ?? {})
+          ...s.lastState
         }).reduce(
           (acc, [k, v]) => {
             switch (k) {
