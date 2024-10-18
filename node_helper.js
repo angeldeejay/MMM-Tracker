@@ -102,7 +102,7 @@ module.exports = NodeHelper.create({
     });
   },
 
-  _parsePasarexShipments(shipments) {
+  _parsePasarexShipments(shipments, requestedShipments) {
     const results = [];
     for (const s of shipments) {
       if (!s.trackingId || !s.lastState) {
@@ -149,12 +149,12 @@ module.exports = NodeHelper.create({
     return string.charAt(0).toUpperCase() + string.slice(1);
   },
 
-  async _getPasarexDetail(apiKey, uuid) {
+  async _getPasarexDetail(apiKey, uuid, requestedShipments) {
     return await axios
       .get(
         `https://parcelsapp.com/api/v3/shipments/tracking?uuid=${uuid}&apiKey=${apiKey}`
       )
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         this.info(JSON.stringify({ _getPasarexDetail: data }));
         if (
           !data.shipments ||
@@ -162,7 +162,10 @@ module.exports = NodeHelper.create({
           data.shipments.length == 0
         )
           return [];
-        return this._parsePasarexShipments(data.shipments);
+        return await this._parsePasarexShipments(
+          data.shipments,
+          requestedShipments
+        );
       })
       .catch((error) => {
         this.error(error);
@@ -200,9 +203,12 @@ module.exports = NodeHelper.create({
           data.shipments.length == 0
         ) {
           if (!data.uuid) return [];
-          return this._getPasarexDetail(apiKey, data.uuid);
+          return this._getPasarexDetail(apiKey, data.uuid, requestedShipments);
         }
-        return await this._parsePasarexShipments(data.shipments);
+        return await this._parsePasarexShipments(
+          data.shipments,
+          requestedShipments
+        );
       })
       .catch((error) => {
         this.error(error);
