@@ -8,7 +8,7 @@ Module.register("MMM-Tracker", {
   // Declare default inputs
   defaults: {
     parcelApiKey: null,
-    fetchInterval: 60_000,
+    fetchInterval: 60 * 60 * 1000,
     shipments: []
   },
 
